@@ -4,7 +4,7 @@
     <div class="row">
         <div class="col-sm-12 col-md-12">
             <div class="panel panel-primary panel-hovered panel-stacked mb30">
-                <div class="panel-heading">{Lang::T('Informllllllllation')}</div>
+                <div class="panel-heading">{Lang::T('Information')}</div>
                 <div class="panel-body">
                     <ol>
                         <li>{Lang::T('This Plugin only import Packages and Users')}</li>
