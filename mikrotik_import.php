@@ -21,7 +21,6 @@ function mikrotik_import_start_ui()
     ini_set('max_execution_time', 0);
     set_time_limit(0);
     _admin();
-
     $ui->assign('_title', 'Mikrotik Start Import');
     $ui->assign('_system_menu', 'settings');
     $admin = Admin::_info();
@@ -40,67 +39,54 @@ function mikrotik_import_start_ui()
             $mikrotik['username'],
             $mikrotik['password']
         );
-    } elseif ($type == 'PPPOE') {
+    } else if ($type == 'PPPOE') {
         $results = mikrotik_import_mikrotik_ppoe_package(
             $_POST['server'],
             $mikrotik['ip_address'],
             $mikrotik['username'],
             $mikrotik['password']
         );
-    } else {
-        $results = ['Tipo no soportado'];
     }
 
     $ui->assign('results', $results);
     $ui->display('mikrotik_import_start.tpl');
 }
 
-/* =======================
-   HOTSPOT
-======================= */
-
 function mikrotik_import_mikrotik_hotspot_package($router, $ip, $user, $pass)
 {
     $client = Mikrotik::getClient($ip, $user, $pass);
 
-    $printRequest = new RouterOS\Request(
-        '/ip hotspot user profile print'
-    );
-
+    $printRequest = new RouterOS\Request('/ip hotspot user profile print');
     $results = [];
     $profiles = $client->sendSync($printRequest)->toArray();
 
     foreach ($profiles as $p) {
 
-        $name        = $p->getProperty('name');
-        $rateLimit   = $p->getProperty('rate-limit');
-        $sharedUser  = $p->getProperty('shared-user');
+        $name = $p->getProperty('name');
+        $rateLimitRaw = trim($p->getProperty('rate-limit'));
+        $sharedUser = $p->getProperty('shared-user');
 
-        $fullRateLimit = trim((string)$rateLimit);
-
-        // Validar rate-limit real
-        if ($fullRateLimit === '' || $fullRateLimit === 'none') {
+        if (empty($rateLimitRaw)) {
             continue;
         }
 
-        // Ejemplo: 10M/10M 20M/20M 10M/10M 8 8
-        $parts = preg_split('/\s+/', $fullRateLimit);
-        $baseRate = $parts[0] ?? null;
+        // 👉 SOLO para calcular velocidades, usamos el primer bloque
+        $rateParts = preg_split('/\s+/', $rateLimitRaw);
+        $maxLimit = $rateParts[0]; // 10M/10M
 
-        if (!$baseRate || strpos($baseRate, '/') === false) {
+        if (strpos($maxLimit, '/') === false) {
             continue;
         }
 
-        list($up, $down) = explode('/', $baseRate);
+        $rate = explode('/', $maxLimit);
 
-        $rate_up   = (int) preg_replace('/\D/', '', $up);
-        $rate_down = (int) preg_replace('/\D/', '', $down);
+        $unit_up   = preg_replace('/[^a-zA-Z]/', '', $rate[0]) . 'bps';
+        $unit_down = preg_replace('/[^a-zA-Z]/', '', $rate[1]) . 'bps';
+        $rate_up   = preg_replace('/[^0-9]/', '', $rate[0]);
+        $rate_down = preg_replace('/[^0-9]/', '', $rate[1]);
 
-        $unit_up   = preg_replace('/[^a-zA-Z]/', '', $up) . 'bps';
-        $unit_down = preg_replace('/[^a-zA-Z]/', '', $down) . 'bps';
-
-        // Nombre REAL del bandwidth
-        $bw_name = $name . ' | ' . $baseRate;
+        // 👉 nombre basado en el rate-limit COMPLETO
+        $bw_name = str_replace([' ', '/'], ['_', '_'], $rateLimitRaw);
 
         $bw = ORM::for_table('tbl_bandwidth')
             ->where('name_bw', $bw_name)
@@ -119,16 +105,16 @@ function mikrotik_import_mikrotik_hotspot_package($router, $ip, $user, $pass)
 
             $bw_id = $d->id();
         } else {
+            $results[] = "El ancho de banda existe: $bw_name";
             $bw_id = $bw->id;
         }
 
-        // Crear paquete
         $pack = ORM::for_table('tbl_plans')
             ->where('name_plan', $name)
             ->find_one();
 
         if (!$pack) {
-            $results[] = "Paquete creado: $name";
+            $results[] = "Packages Created: $name";
 
             $d = ORM::for_table('tbl_plans')->create();
             $d->name_plan = $name;
@@ -147,54 +133,46 @@ function mikrotik_import_mikrotik_hotspot_package($router, $ip, $user, $pass)
             $d->routers = $router;
             $d->enabled = 1;
             $d->save();
+        } else {
+            $results[] = "Los paquetes existen: $name";
         }
     }
 
     return $results;
 }
 
-/* =======================
-   PPPOE
-======================= */
-
 function mikrotik_import_mikrotik_ppoe_package($router, $ip, $user, $pass)
 {
     $client = Mikrotik::getClient($ip, $user, $pass);
 
-    $printRequest = new RouterOS\Request(
-        '/ppp profile print'
-    );
-
+    $printRequest = new RouterOS\Request('/ppp profile print');
     $results = [];
     $profiles = $client->sendSync($printRequest)->toArray();
 
     foreach ($profiles as $p) {
 
-        $name      = $p->getProperty('name');
-        $rateLimit = $p->getProperty('rate-limit');
+        $name = $p->getProperty('name');
+        $rateLimitRaw = trim($p->getProperty('rate-limit'));
 
-        $fullRateLimit = trim((string)$rateLimit);
-
-        if ($fullRateLimit === '' || $fullRateLimit === 'none') {
+        if (empty($rateLimitRaw)) {
             continue;
         }
 
-        $parts = preg_split('/\s+/', $fullRateLimit);
-        $baseRate = $parts[0] ?? null;
+        $rateParts = preg_split('/\s+/', $rateLimitRaw);
+        $maxLimit = $rateParts[0];
 
-        if (!$baseRate || strpos($baseRate, '/') === false) {
+        if (strpos($maxLimit, '/') === false) {
             continue;
         }
 
-        list($up, $down) = explode('/', $baseRate);
+        $rate = explode('/', $maxLimit);
 
-        $rate_up   = (int) preg_replace('/\D/', '', $up);
-        $rate_down = (int) preg_replace('/\D/', '', $down);
+        $unit_up   = preg_replace('/[^a-zA-Z]/', '', $rate[0]) . 'bps';
+        $unit_down = preg_replace('/[^a-zA-Z]/', '', $rate[1]) . 'bps';
+        $rate_up   = preg_replace('/[^0-9]/', '', $rate[0]);
+        $rate_down = preg_replace('/[^0-9]/', '', $rate[1]);
 
-        $unit_up   = preg_replace('/[^a-zA-Z]/', '', $up) . 'bps';
-        $unit_down = preg_replace('/[^a-zA-Z]/', '', $down) . 'bps';
-
-        $bw_name = $name . ' | ' . $baseRate;
+        $bw_name = str_replace([' ', '/'], ['_', '_'], $rateLimitRaw);
 
         $bw = ORM::for_table('tbl_bandwidth')
             ->where('name_bw', $bw_name)
@@ -213,6 +191,7 @@ function mikrotik_import_mikrotik_ppoe_package($router, $ip, $user, $pass)
 
             $bw_id = $d->id();
         } else {
+            $results[] = "El ancho de banda existe: $bw_name";
             $bw_id = $bw->id;
         }
 
@@ -221,7 +200,7 @@ function mikrotik_import_mikrotik_ppoe_package($router, $ip, $user, $pass)
             ->find_one();
 
         if (!$pack) {
-            $results[] = "Paquete creado: $name";
+            $results[] = "Paquetes creados: $name";
 
             $d = ORM::for_table('tbl_plans')->create();
             $d->name_plan = $name;
@@ -239,6 +218,8 @@ function mikrotik_import_mikrotik_ppoe_package($router, $ip, $user, $pass)
             $d->routers = $router;
             $d->enabled = 1;
             $d->save();
+        } else {
+            $results[] = "Los paquetes existen: $name";
         }
     }
 
