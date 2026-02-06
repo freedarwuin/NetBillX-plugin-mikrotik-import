@@ -149,19 +149,36 @@ function mikrotik_import_mikrotik_ppoe_package($router, $ip, $user, $pass)
         $name = $p->getProperty('name');
         $rateLimit = $p->getProperty('rate-limit');
 
-        // 10M/10M
-        $rateLimit = explode(" ", $rateLimit)[0];
-        if (strlen($rateLimit) > 1) {
+        // Ejemplo recibido desde Mikrotik:
+        // 10M/10M 20M/20M 10M/10M 8 8
+
+        $rateParts = preg_split('/\s+/', trim($rateLimit));
+
+        // Solo usamos el rate base (10M/10M)
+        $baseRate = $rateParts[0] ?? null;
+
+        if ($baseRate && strpos($baseRate, '/') !== false) {
+
             // Create Bandwidth profile
-            $rate = explode("/", $rateLimit);
-            $unit_up = preg_replace("/[^a-zA-Z]+/", "", $rate[0]) . "bps";
+            $rate = explode("/", $baseRate);
+
+            $unit_up   = preg_replace("/[^a-zA-Z]+/", "", $rate[0]) . "bps";
             $unit_down = preg_replace("/[^a-zA-Z]+/", "", $rate[1]) . "bps";
-            $rate_up = preg_replace("/[^0-9]+/", "", $rate[0]);
+
+            $rate_up   = preg_replace("/[^0-9]+/", "", $rate[0]);
             $rate_down = preg_replace("/[^0-9]+/", "", $rate[1]);
-            $bw_name = str_replace("/", "_", $rateLimit);
-            $bw = ORM::for_table('tbl_bandwidth')->where('name_bw', $bw_name)->find_one();
+
+            // Nombre técnico del perfil (SIN perder la ráfaga si luego la necesitas)
+            $bw_name = str_replace("/", "_", $baseRate);
+
+            $bw = ORM::for_table('tbl_bandwidth')
+                ->where('name_bw', $bw_name)
+                ->find_one();
+
             if (!$bw) {
+
                 $results[] = "Ancho de banda creado: $bw_name";
+
                 $d = ORM::for_table('tbl_bandwidth')->create();
                 $d->name_bw = $bw_name;
                 $d->rate_down = $rate_down;
@@ -169,11 +186,15 @@ function mikrotik_import_mikrotik_ppoe_package($router, $ip, $user, $pass)
                 $d->rate_up = $rate_up;
                 $d->rate_up_unit = $unit_up;
                 $d->save();
+
                 $bw_id = $d->id();
-            }else{
+
+            } else {
                 $results[] = "El ancho de banda existe: $bw_name";
                 $bw_id = $bw->id;
             }
+        }
+
 
             // Create Packages
             $pack = ORM::for_table('tbl_plans')->where('name_plan', $name)->find_one();
