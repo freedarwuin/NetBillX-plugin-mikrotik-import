@@ -53,31 +53,67 @@ function mikrotik_import_mikrotik_hotspot_package($router, $ip, $user, $pass)
         $rateLimit = $p->getProperty('rate-limit');
         $sharedUser = $p->getProperty('shared-user');
 
-        // 10M/10M
-        $rateLimit = explode(" ", $rateLimit)[0];
-        if (strlen($rateLimit) > 1) {
-            // Create Bandwidth profile
-            $rate = explode("/", $rateLimit);
-            $unit_up = preg_replace("/[^a-zA-Z]+/", "", $rate[0]) . "bps";
-            $unit_down = preg_replace("/[^a-zA-Z]+/", "", $rate[1]) . "bps";
-            $rate_up = preg_replace("/[^0-9]+/", "", $rate[0]);
-            $rate_down = preg_replace("/[^0-9]+/", "", $rate[1]);
-            $bw_name = str_replace("/", "_", $rateLimit);
-            $bw = ORM::for_table('tbl_bandwidth')->where('name_bw', $bw_name)->find_one();
+        // Ejemplo Mikrotik:
+        // 10M/10M 20M/20M 10M/10M 8 8
+
+        $parts = preg_split('/\s+/', trim($rateLimit));
+
+        $baseRate       = $parts[0] ?? null; // 10M/10M
+        $burstRate      = $parts[1] ?? null; // 20M/20M
+        $burstThreshold = $parts[2] ?? null; // 10M/10M
+        $burstTime      = $parts[3] ?? null; // 8
+        $priority       = $parts[4] ?? null; // 8
+
+        if ($baseRate && strpos($baseRate, '/') !== false) {
+
+            // Base rate UP / DOWN
+            list($up, $down) = explode('/', $baseRate);
+
+            $rate_up   = (int) preg_replace('/\D/', '', $up);
+            $rate_down = (int) preg_replace('/\D/', '', $down);
+
+            $unit_up   = preg_replace('/[^a-zA-Z]/', '', $up) . 'bps';
+            $unit_down = preg_replace('/[^a-zA-Z]/', '', $down) . 'bps';
+
+            // Nombre técnico del perfil
+            $bw_name = str_replace(' ', '_', $rateLimit);
+
+            $bw = ORM::for_table('tbl_bandwidth')
+                ->where('name_bw', $bw_name)
+                ->find_one();
+
             if (!$bw) {
+
                 $results[] = "Ancho de banda creado: $bw_name";
+
                 $d = ORM::for_table('tbl_bandwidth')->create();
                 $d->name_bw = $bw_name;
+
+                // Base rate
                 $d->rate_down = $rate_down;
                 $d->rate_down_unit = $unit_down;
                 $d->rate_up = $rate_up;
                 $d->rate_up_unit = $unit_up;
+
+                /*
+                =========================
+                DATOS DE RÁFAGA (LISTOS)
+                =========================
+                $burstRate       -> 20M/20M
+                $burstThreshold -> 10M/10M
+                $burstTime      -> 8
+                $priority       -> 8
+                */
+
                 $d->save();
                 $bw_id = $d->id();
-            }else{
+
+            } else {
                 $results[] = "El ancho de banda existe: $bw_name";
                 $bw_id = $bw->id;
             }
+        }
+
 
             // Create Packages
             $pack = ORM::for_table('tbl_plans')->where('name_plan', $name)->find_one();
