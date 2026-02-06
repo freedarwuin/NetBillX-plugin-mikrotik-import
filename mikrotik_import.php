@@ -86,7 +86,7 @@ function mikrotik_import_mikrotik_hotspot_package($router, $ip, $user, $pass)
                 $d = ORM::for_table('tbl_plans')->create();
                 $d->name_plan = $name;
                 $d->id_bw = $bw_id;
-                $d->price = '10000';
+                $d->price = '1';
                 $d->type = 'Hotspot';
                 $d->typebp = 'Unlimited';
                 $d->limit_type = 'Time_Limit';
@@ -182,7 +182,7 @@ function mikrotik_import_mikrotik_ppoe_package($router, $ip, $user, $pass)
                 $d = ORM::for_table('tbl_plans')->create();
                 $d->name_plan = $name;
                 $d->id_bw = $bw_id;
-                $d->price = '10000';
+                $d->price = '1';
                 $d->type = 'PPPOE';
                 $d->typebp = 'Unlimited';
                 $d->limit_type = 'Time_Limit';
