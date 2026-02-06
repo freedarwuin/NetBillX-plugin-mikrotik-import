@@ -1,5 +1,3 @@
-Estoy notando que no se esta extrayendo el burst del mikrotik aqui te paso el codigo
-
 <?php
 
 use PEAR2\Net\RouterOS;
@@ -67,7 +65,7 @@ function mikrotik_import_mikrotik_hotspot_package($router, $ip, $user, $pass)
             $bw_name = str_replace("/", "_", $rateLimit);
             $bw = ORM::for_table('tbl_bandwidth')->where('name_bw', $bw_name)->find_one();
             if (!$bw) {
-                $results[] = "Ancho de banda creado: $bw_name";
+                $results[] = "Bandwith Created: $bw_name";
                 $d = ORM::for_table('tbl_bandwidth')->create();
                 $d->name_bw = $bw_name;
                 $d->rate_down = $rate_down;
@@ -77,14 +75,14 @@ function mikrotik_import_mikrotik_hotspot_package($router, $ip, $user, $pass)
                 $d->save();
                 $bw_id = $d->id();
             }else{
-                $results[] = "El ancho de banda existe: $bw_name";
+                $results[] = "Bandwith Exists: $bw_name";
                 $bw_id = $bw->id;
             }
 
             // Create Packages
             $pack = ORM::for_table('tbl_plans')->where('name_plan', $name)->find_one();
             if(!$pack){
-                $results[] = "Paquetes creados: $name";
+                $results[] = "Packages Created: $name";
                 $d = ORM::for_table('tbl_plans')->create();
                 $d->name_plan = $name;
                 $d->id_bw = $bw_id;
@@ -103,7 +101,7 @@ function mikrotik_import_mikrotik_hotspot_package($router, $ip, $user, $pass)
                 $d->enabled = 1;
                 $d->save();
             }else{
-                $results[] = "Los paquetes existen: $name";
+                $results[] = "Packages Exists: $name";
             }
         }
     }
@@ -117,7 +115,7 @@ function mikrotik_import_mikrotik_hotspot_package($router, $ip, $user, $pass)
         if(!empty($username) && !empty($u->getProperty('password'))){
             $d = ORM::for_table('tbl_customers')->where('username', $username)->find_one();
             if($d){
-                $results[] = "El nombre de usuario existe: $username";
+                $results[] = "Username Exists: $username";
             }else{
                 $d = ORM::for_table('tbl_customers')->create();
                 $d->username = $username;
@@ -127,9 +125,9 @@ function mikrotik_import_mikrotik_hotspot_package($router, $ip, $user, $pass)
                 $d->email = ($u->getProperty('email'))?$u->getProperty('email'):'';
                 $d->phonenumber = '';
                 if ($d->save()) {
-                    $results[] = "$username añadido con éxito";
+                    $results[] = "$username added successfully";
                 }else{
-                    $results[] = "$username No se pudo agregar";
+                    $results[] = "$username Failed to be added";
                 }
             }
         }
@@ -163,7 +161,7 @@ function mikrotik_import_mikrotik_ppoe_package($router, $ip, $user, $pass)
             $bw_name = str_replace("/", "_", $rateLimit);
             $bw = ORM::for_table('tbl_bandwidth')->where('name_bw', $bw_name)->find_one();
             if (!$bw) {
-                $results[] = "Ancho de banda creado: $bw_name";
+                $results[] = "Bandwith Created: $bw_name";
                 $d = ORM::for_table('tbl_bandwidth')->create();
                 $d->name_bw = $bw_name;
                 $d->rate_down = $rate_down;
@@ -173,14 +171,14 @@ function mikrotik_import_mikrotik_ppoe_package($router, $ip, $user, $pass)
                 $d->save();
                 $bw_id = $d->id();
             }else{
-                $results[] = "El ancho de banda existe: $bw_name";
+                $results[] = "Bandwith Exists: $bw_name";
                 $bw_id = $bw->id;
             }
 
             // Create Packages
             $pack = ORM::for_table('tbl_plans')->where('name_plan', $name)->find_one();
             if(!$pack){
-                $results[] = "Paquetes creados: $name";
+                $results[] = "Packages Created: $name";
                 $d = ORM::for_table('tbl_plans')->create();
                 $d->name_plan = $name;
                 $d->id_bw = $bw_id;
@@ -198,7 +196,7 @@ function mikrotik_import_mikrotik_ppoe_package($router, $ip, $user, $pass)
                 $d->enabled = 1;
                 $d->save();
             }else{
-                $results[] = "Los paquetes existen: $name";
+                $results[] = "Packages Exists: $name";
             }
         }
     }
@@ -212,7 +210,7 @@ function mikrotik_import_mikrotik_ppoe_package($router, $ip, $user, $pass)
         if(!empty($username) && !empty($u->getProperty('password'))){
             $d = ORM::for_table('tbl_customers')->where('username', $username)->find_one();
             if($d){
-                $results[] = "El nombre de usuario existe: $username";
+                $results[] = "Username Exists: $username";
             }else{
                 $d = ORM::for_table('tbl_customers')->create();
                 $d->username = $username;
@@ -222,9 +220,9 @@ function mikrotik_import_mikrotik_ppoe_package($router, $ip, $user, $pass)
                 $d->email = '';
                 $d->phonenumber = '';
                 if ($d->save()) {
-                    $results[] = "$username añadido con éxito";
+                    $results[] = "$username added successfully";
                 }else{
-                    $results[] = "$username No se pudo agregar";
+                    $results[] = "$username Failed to be added";
                 }
             }
         }
