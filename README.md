@@ -1,13 +1,13 @@
-# NetBillX Plugin: Mikrotik Import
+# NetBillX Plugin: Importación desde Mikrotik
 
-Import existing Mikrotik Hotspot Package and User to NetBillX
+Importa paquetes y usuarios existentes de Hotspot de Mikrotik a NetBillX
 
-***This script will import Users and Profiles, but will not add active packages to user.***
+***Este script importará Usuarios y Perfiles, pero no agregará paquetes activos a los usuarios.***
 
-# Installation
+# Instalación
 
-Copy **mikrotik_import.php** to **/system/plugin/**  
-Copy **ui/mikrotik_import.tpl** and **ui/mikrotik_import_start.tpl** to **/system/plugin/ui/**  
+Copia **mikrotik_import.php** a **/system/plugin/**  
+Copia **ui/mikrotik_import.tpl** y **ui/mikrotik_import_start.tpl** a **/system/plugin/ui/**
 
-# Requested and donated by
-- Imam Syafi'i
+# Solicitado y donado por
+- Freedarwuin
