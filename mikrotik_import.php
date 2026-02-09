@@ -8,7 +8,7 @@ function mikrotik_import_ui()
 {
     global $ui;
     _admin();
-    $ui->assign('_title', 'Mikrotik Import');
+    $ui->assign('_title', Lang::T('Mikrotik Import'));
     $ui->assign('_system_menu', 'settings');
     $admin = Admin::_info();
     $ui->assign('_admin', $admin);
@@ -21,7 +21,7 @@ function mikrotik_import_start_ui()
     ini_set('max_execution_time', 0);
     set_time_limit(0);
     _admin();
-    $ui->assign('_title', 'Mikrotik Start Import');
+    $ui->assign('_title', Lang::T('Mikrotik Start Import'));
     $ui->assign('_system_menu', 'settings');
     $admin = Admin::_info();
     $ui->assign('_admin', $admin);
